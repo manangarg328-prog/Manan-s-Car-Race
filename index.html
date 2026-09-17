@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Hill Climb Game - Manan Garg</title>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        background: linear-gradient(skyblue, lightgreen);
+        font-family: Arial;
+    }
+    canvas {
+        display: block;
+    }
+    #ui {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: black;
+        font-size: 18px;
+        background: rgba(255,255,255,0.7);
+        padding: 10px;
+        border-radius: 10px;
+    }
+</style>
+</head>
+<body>
+
+<div id="ui">
+    Fuel: <span id="fuel">100</span> |
+    Distance: <span id="distance">0</span> |
+    Level: <span id="level">1</span>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Game variables
+let car = {
+    x: 100,
+    y: 300,
+    width: 60,
+    height: 30,
+    speed: 0,
+    color: "red"
+};
+
+let gravity = 0.5;
+let terrain = [];
+let fuel = 100;
+let distance = 0;
+let level = 1;
+
+// Generate terrain
+function generateTerrain() {
+    terrain = [];
+    for (let i = 0; i < canvas.width * 2; i++) {
+        terrain.push(300 + Math.sin(i * 0.01) * (50 + level * 5));
+    }
+}
+generateTerrain();
+
+// Controls
+let keys = {};
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+// Change vehicle (color)
+function changeVehicle() {
+    const colors = ["red", "blue", "green", "purple", "orange"];
+    car.color = colors[Math.floor(Math.random() * colors.length)];
+}
+
+// Game loop
+function update() {
+    // Acceleration
+    if (keys["ArrowRight"] && fuel > 0) {
+        car.speed += 0.2;
+        fuel -= 0.1;
+    }
+    if (keys["ArrowLeft"]) {
+        car.speed -= 0.1;
+    }
+
+    car.speed *= 0.98; // friction
+    car.x += car.speed;
+    distance += Math.abs(car.speed);
+
+    // Terrain collision
+    let groundY = terrain[Math.floor(car.x)];
+    if (car.y < groundY - car.height) {
+        car.y += gravity;
+    } else {
+        car.y = groundY - car.height;
+    }
+
+    // Level increase
+    if (distance > level * 500) {
+        level++;
+        fuel = 100;
+        changeVehicle();
+        generateTerrain();
+    }
+
+    // UI update
+    document.getElementById("fuel").innerText = Math.floor(fuel);
+    document.getElementById("distance").innerText = Math.floor(distance);
+    document.getElementById("level").innerText = level;
+}
+
+// Draw
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw terrain
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height);
+    for (let i = 0; i < terrain.length; i++) {
+        ctx.lineTo(i - car.x + 100, terrain[i]);
+    }
+    ctx.lineTo(canvas.width, canvas.height);
+    ctx.fillStyle = "brown";
+    ctx.fill();
+
+    // Draw car
+    ctx.fillStyle = car.color;
+    ctx.fillRect(100, car.y, car.width, car.height);
+
+    // Wheels
+    ctx.beginPath();
+    ctx.arc(115, car.y + 30, 10, 0, Math.PI * 2);
+    ctx.arc(145, car.y + 30, 10, 0, Math.PI * 2);
+    ctx.fillStyle = "black";
+    ctx.fill();
+}
+
+// Main loop
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
